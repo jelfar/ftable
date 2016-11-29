@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+# ftable
+# Does a frequency analysis on given text including index of
+# coincidence.
+import getopt, sys, fileinput, re, math
+
+NUMBER_OF_LETTERS_IN_ALPHABET = 26
+
+def usage():
+    print("usage: ftable [ -v ] [ -s num ] [ -p num ] [ infile [ outfile ] ]");
+
+#gets index of coincidence
+def getIc(cipherLength, keyLength, ftable):
+    cipherLength = float(cipherLength)
+    keyLength = float(keyLength)
+    output = 0.0
+    for i in range(NUMBER_OF_LETTERS_IN_ALPHABET):
+        output += ftable[i]*(ftable[i] - 1)
+    output /= cipherLength * (cipherLength - 1)
+    return output
+    
+#generates the frequency information per each english letter
+def generateFrequencyTable(inputFile, outputFile, numCharsToSkip, 
+                           nthCharacterCount):
+    table = [0] * NUMBER_OF_LETTERS_IN_ALPHABET
+    totalChars = 0
+    characterCountIndex = 0
+    letterCount = letterAverage = 0
+    
+    #get cipher text
+    while 1:
+        char = inputFile.read(1)
+        if not char: break
+        if char.isalpha():
+            if numCharsToSkip == 0:
+                characterCountIndex %= nthCharacterCount
+                if characterCountIndex == 0:
+                    table[ord(char.upper()) - ord('A')] += 1
+                    totalChars += 1
+                characterCountIndex += 1
+            elif numCharsToSkip > 0:
+                numCharsToSkip -= 1
+    print("Total chars:", totalChars, file=outputFile) 
+    for i in range(NUMBER_OF_LETTERS_IN_ALPHABET):
+        letterCount = table[i]
+        if totalChars == 0:
+            letterAverage = 0
+        else:
+            letterAverage = float(letterCount/totalChars) * 100
+
+        starLength = int(math.ceil(letterAverage))
+        print("%c:%9c%s (%6.2f%%) %s" % (chr(i + ord('A')), ' ', 
+                                       str(letterCount).rjust(4),
+                                       letterAverage, '*' * starLength),
+                                       file=outputFile)
+
+    
+    print("\nIndex of Coincidence: %.4f" % (getIc(totalChars, 4, table)))
+
+#runs the frequency analysis and handles file I/O
+def run(inputFile, outputFile, numCharsToSkip, nthCharacterCount):
+    if not inputFile:
+        inputFile = sys.stdin
+    else:
+        try: 
+            inputFile = open(inputFile, 'r');
+        except IOError:
+            print ("Could not open input file.")
+            sys.exit(2)
+
+    if not outputFile:
+        outputFile = sys.stdout
+    else:
+        try: 
+            outputFile = open(outputFile, 'w+');
+        except IOError:
+            print ("Could not open output file.")
+            sys.exit(2)
+    
+    generateFrequencyTable(inputFile, outputFile, numCharsToSkip,
+                           nthCharacterCount)
+
+    inputFile.close()
+    outputFile.close()
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "vs:p:")
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print (str(err)) # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+    
+    verbose = willSkip = willCountEveryOther = False
+    skipN = 0
+    inputFile = ''
+    outputFile = ''
+    countEveryOther = argCount = 1
+
+    for o, a in opts:
+        argCount += 1
+        if o == "-v":
+            verbose = True
+        elif o == "-s":
+            willSkip = True
+            skipN = int(a)
+            argCount += 1
+        elif o == "-p":
+            willCountEveryOther = True
+            countEveryOther = int(a)
+            argCount += 1
+        else:
+            usage()
+            sys.exit(3)
+    
+    if argCount < len(sys.argv):
+        inputFile = sys.argv[argCount]
+    if argCount+1 < len(sys.argv):
+        outputFile = sys.argv[argCount+1]
+    
+    run(inputFile, outputFile, skipN, countEveryOther);
+
+if __name__ == "__main__":
+    main()

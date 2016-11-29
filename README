@@ -1,0 +1,9 @@
+#ftable
+
+Does a frequency analysis on given text including index of
+coincidence.
+
+usage: ftable [ -v ] [ -s num ] [ -p num ] [ infile [ outfile ] ]
+
+executables will need to be preceded with "./" unless 
+$PATH is updated appropriately.
